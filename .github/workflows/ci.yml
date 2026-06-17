@@ -1,19 +1,9 @@
 name: CI Task Manager Flask
 
 on:
-  push:
-    branches:
-      - develop
-      - stage
-      - production
-      - main
+  push:    
   pull_request:
-    branches:
-      - develop
-      - stage
-      - production
-      - main
-
+    
 jobs:
   build-test:
     runs-on: ubuntu-latest
