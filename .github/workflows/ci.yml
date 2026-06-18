@@ -2,17 +2,7 @@ name: CI Task Manager Flask
 
 on:
   push:
-    branches:
-      - develop
-      - stage
-      - production
-      - main
   pull_request:
-    branches:
-      - develop
-      - stage
-      - production
-      - main
 
 jobs:
   build-test:
@@ -43,6 +33,65 @@ jobs:
           python -m unittest discover
         continue-on-error: true
 
+      - name: SAST com Bandit
+        run: |
+          pip install bandit
+          bandit -r todo_project -f txt -o bandit-report.txt || true
+
+      - name: Análise de dependências com OWASP Dependency-Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'task-manager-flask'
+          path: '.'
+          format: 'HTML'
+          out: 'dependency-check-report'
+
+      - name: Upload dos relatórios de segurança
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: |
+            bandit-report.txt
+            dependency-check-report
+
+
       - name: Build da imagem Docker
         run: |
           docker build -t task-manager-flask .
+
+  review-stage-dast:
+    runs-on: ubuntu-latest
+    needs: build-test
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+
+      - name: Build da imagem Docker para ambiente de Review/Stage
+        run: |
+          docker build -t task-manager-flask-review .
+
+      - name: Criar ambiente temporário de Review/Stage
+        run: |
+          docker run -d --name task-manager-review -p 5000:5000 task-manager-flask-review
+          sleep 15
+          curl -I http://localhost:5000
+
+      - name: Executar DAST com OWASP ZAP no ambiente de Review/Stage
+        run: |
+          sudo mkdir -p zap-reports
+          sudo chmod -R 777 zap-reports
+          docker run --rm --network host -v ${{ github.workspace }}/zap-reports:/zap/wrk ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://localhost:5000 -r zap-report.html || true
+
+      - name: Upload do relatório ZAP
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-review-stage-report
+          path: zap-reports/zap-report.html
+
+      - name: Remover ambiente temporário de Review/Stage
+        if: always()
+        run: |
+          docker stop task-manager-review || true
+          docker rm task-manager-review || true
