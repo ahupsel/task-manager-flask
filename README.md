@@ -63,3 +63,5 @@ Change your username and password. You can access this by clicking dropdown in t
 
 ![Image of Yaktocat](output/account-settings.jpg)
 
+
+Atualização para evidência da Etapa 6
