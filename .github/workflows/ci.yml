@@ -1,9 +1,9 @@
 name: CI Task Manager Flask
 
 on:
-  push:    
+  push:
   pull_request:
-    
+
 jobs:
   build-test:
     runs-on: ubuntu-latest
@@ -32,6 +32,28 @@ jobs:
           cd todo_project
           python -m unittest discover
         continue-on-error: true
+
+      - name: SAST com Bandit
+        run: |
+          pip install bandit
+          bandit -r todo_project -f txt -o bandit-report.txt || true
+
+      - name: Análise de dependências com OWASP Dependency-Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'task-manager-flask'
+          path: '.'
+          format: 'HTML'
+          out: 'dependency-check-report'
+
+      - name: Upload dos relatórios de segurança
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: |
+            bandit-report.txt
+            dependency-check-report
+
 
       - name: Build da imagem Docker
         run: |
