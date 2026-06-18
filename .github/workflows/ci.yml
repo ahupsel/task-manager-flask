@@ -83,6 +83,7 @@ jobs:
         with:
           target: 'http://localhost:5000'
           cmd_options: '-a'
+          allow_issue_writing: false
 
       - name: Remover ambiente temporário de Review/Stage
         if: always()
