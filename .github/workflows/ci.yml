@@ -4,6 +4,11 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+  issues: write
+  actions: write
+
 jobs:
   build-test:
     runs-on: ubuntu-latest
@@ -83,7 +88,6 @@ jobs:
         with:
           target: 'http://localhost:5000'
           cmd_options: '-a'
-          allow_issue_writing: false
 
       - name: Remover ambiente temporário de Review/Stage
         if: always()
